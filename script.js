@@ -1,0 +1,1 @@
+const header=document.querySelector('.header');document.querySelector('.menuBtn').addEventListener('click',()=>header.classList.toggle('open'));document.querySelectorAll('.products button').forEach((b)=>b.addEventListener('click',()=>alert('이 버튼에는 다음 단계에서 해당 네이버 스마트스토어 상품 링크를 연결합니다.')));

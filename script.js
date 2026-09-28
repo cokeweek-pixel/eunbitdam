@@ -1,1 +1,16 @@
-const header=document.querySelector('.header');document.querySelector('.menuBtn').addEventListener('click',()=>header.classList.toggle('open'));document.querySelectorAll('.products button').forEach((b)=>b.addEventListener('click',()=>alert('이 버튼에는 다음 단계에서 해당 네이버 스마트스토어 상품 링크를 연결합니다.')));
+const header=document.querySelector('.header');
+document.querySelector('.menuBtn')?.addEventListener('click',()=>header.classList.toggle('open'));
+document.querySelectorAll('.header nav a').forEach(a=>a.addEventListener('click',()=>header.classList.remove('open')));
+
+const notice=document.getElementById('siteNotice');
+const closeNotice=()=>{
+  notice?.classList.add('isHidden');
+  document.body.classList.remove('noticeOpen');
+};
+if(notice){
+  document.body.classList.add('noticeOpen');
+  notice.querySelector('.noticeClose')?.addEventListener('click',closeNotice);
+  notice.querySelector('.noticeEnter')?.addEventListener('click',closeNotice);
+  notice.addEventListener('click',e=>{if(e.target===notice) closeNotice();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape') closeNotice();});
+}

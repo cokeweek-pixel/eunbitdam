@@ -79,3 +79,16 @@ body.noticeOpen{overflow:hidden}.siteNotice{position:fixed;inset:0;z-index:1000;
   #dynamicStoneCards.storyCards{grid-template-columns:1fr;gap:18px;}
   #dynamicStoneCards .stoneDbCard{padding:10px 10px 20px;}
 }
+
+
+/* Stone story cards v2 — larger, consistent typography */
+#dynamicStoneCards.storyCards{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;max-width:1320px}
+#dynamicStoneCards .stoneDbCard{padding:0 0 26px;overflow:hidden}
+#dynamicStoneCards .stoneDbImage{aspect-ratio:16/10;margin:0 0 22px}
+#dynamicStoneCards .stoneDbCard small{font-family:Georgia,serif;font-size:13px;letter-spacing:.2em;margin:0 24px 8px;color:#93684d}
+#dynamicStoneCards .stoneDbCard h3{font-family:Georgia,"Noto Serif KR",serif;font-size:29px;font-weight:400;line-height:1.35;margin:0 24px 22px;color:#35281f}
+#dynamicStoneCards .stoneDbCard h4{font-family:"Noto Sans KR","Apple SD Gothic Neo",sans-serif;font-size:15px;font-weight:600;margin:18px 24px 7px;color:#4b382b}
+#dynamicStoneCards .stoneDbCard p{font-size:15px;line-height:1.9;margin:0 24px;color:#65584d;min-height:auto}
+#dynamicStoneCards .stoneDbCard b{font-size:15px;line-height:1.8;margin:18px 24px 0;color:#76553f;font-weight:500}
+@media(max-width:900px){#dynamicStoneCards.storyCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){#dynamicStoneCards.storyCards{grid-template-columns:1fr}#dynamicStoneCards .stoneDbCard h3{font-size:27px}}

@@ -43,8 +43,17 @@ const E=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt
 (async()=>{const grid=document.getElementById('stonesGrid');try{
  const r=await fetch(U+'/rest/v1/stones?select=*&order=id.asc',{headers:{apikey:K,Authorization:'Bearer '+K},cache:'no-store'});
  if(!r.ok)throw new Error(await r.text()); const rows=await r.json();
- if(!rows.length){grid.innerHTML='<p class="stonesLoading">등록된 원석 이야기가 없습니다.</p>';return;}
- grid.innerHTML=rows.map(s=>{const parts=String(s.name||'').split('·');const ko=(parts[0]||'').trim();const en=(parts.slice(1).join('·')||ko).trim();
+ const curated=[{
+ name:"자수정 · Amethyst",
+ features:"석영 계열의 원석으로, 미량의 철 성분과 자연 방사선의 영향으로 연한 라벤더색부터 짙은 보라색까지 다양한 색을 띱니다. 암석의 빈 공간 안에서 결정이 자라 군집이나 정동(geode)의 형태로 발견되기도 합니다.",
+ story:"자수정의 영어 이름 Amethyst는 고대 그리스어 amethystos에서 유래합니다. 고대 그리스·로마 문화에서는 술에 취하지 않게 해 준다는 믿음과 연결되었고, 이후에는 절제와 맑은 정신을 상징하는 보석으로도 이야기되어 왔습니다.",
+ symbolism:"평온 · 절제 · 지혜 · 맑은 정신",
+ image_url:"https://commons.wikimedia.org/wiki/Special:Redirect/file/Raw%20amethyst%20crystals%201.jpg",
+ credit:"Photo: W.carter / Wikimedia Commons · CC BY-SA 4.0"
+ }];
+ const names=new Set(rows.map(s=>String(s.name||"").toLowerCase()));
+ const all=rows.concat(curated.filter(s=>!names.has(s.name.toLowerCase())));
+ grid.innerHTML=all.map(s=>{const parts=String(s.name||'').split('·');const ko=(parts[0]||'').trim();const en=(parts.slice(1).join('·')||ko).trim();
  return '<article class="stoneCard"><div class="stonePhoto">'+(s.image_url?'<img src="'+E(s.image_url)+'" alt="'+E(ko)+'" loading="lazy">':'')+'</div><div class="stoneBody"><small class="stoneEnglish">'+E(en)+'</small><h2 class="stoneName">'+E(ko)+'</h2><div class="stoneSection"><h3>자연적 특징</h3><p>'+E(s.features)+'</p></div><div class="stoneSection"><h3>전해지는 이야기</h3><p>'+E(s.story)+'</p></div><div class="stoneSymbol"><strong>전해지는 상징</strong> · '+E(s.symbolism)+'</div></div></article>'}).join('');
 }catch(e){console.error(e);grid.innerHTML='<p class="stonesLoading">원석 이야기를 불러오지 못했습니다.</p>';}})();
 </script>

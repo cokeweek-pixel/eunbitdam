@@ -92,3 +92,13 @@ body.noticeOpen{overflow:hidden}.siteNotice{position:fixed;inset:0;z-index:1000;
 #dynamicStoneCards .stoneDbCard b{font-size:15px;line-height:1.8;margin:18px 24px 0;color:#76553f;font-weight:500}
 @media(max-width:900px){#dynamicStoneCards.storyCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){#dynamicStoneCards.storyCards{grid-template-columns:1fr}#dynamicStoneCards .stoneDbCard h3{font-size:27px}}
+
+
+/* Stone story readability v3 */
+#dynamicStoneCards.storyCards{grid-template-columns:repeat(2,minmax(0,1fr));max-width:1180px;gap:32px}
+#dynamicStoneCards .stoneDbCard small{font-size:14px}
+#dynamicStoneCards .stoneDbCard h3{font-size:34px;letter-spacing:-.02em}
+#dynamicStoneCards .stoneDbCard h4{font-size:19px;margin-top:24px}
+#dynamicStoneCards .stoneDbCard p{font-family:"Noto Serif KR","Apple SD Gothic Neo",serif;font-size:18px;line-height:2}
+#dynamicStoneCards .stoneDbCard b{font-family:"Noto Serif KR","Apple SD Gothic Neo",serif;font-size:17px;line-height:1.9}
+@media(max-width:900px){#dynamicStoneCards.storyCards{grid-template-columns:1fr;max-width:680px}}

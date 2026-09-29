@@ -1,3 +1,6 @@
+const SUPABASE_URL='https://jkyavwcdzkityyqsazel.supabase.co';const SUPABASE_KEY='sb_publishable_dNe8kUYYQfh6m6umLmCgtQ_vrb1YfZK';const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+(async()=>{const {data,error}=await sb.auth.getSession();if(error||!data.session){location.replace('login.html');return;}document.getElementById('adminAuthLoading')?.remove();document.getElementById('adminShell').hidden=false;})();
+document.getElementById('adminLogout')?.addEventListener('click',async()=>{await sb.auth.signOut();location.replace('login.html');});
 document.querySelectorAll('.adminSide button[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.adminSide button').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.adminPanel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab)?.classList.add('active');}));
 function preview(inputId,previewId){const input=document.getElementById(inputId), box=document.getElementById(previewId);input?.addEventListener('change',()=>{const f=input.files?.[0];if(!f)return;const u=URL.createObjectURL(f);box.innerHTML='<img src="'+u+'" alt="미리보기">';});}
 preview('productImage','productPreview');preview('heroImage','heroPreview');preview('stoneImage','stonePreview');

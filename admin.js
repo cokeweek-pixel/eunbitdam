@@ -9,7 +9,7 @@ let currentSession=null;
  currentSession=data.session;
  document.getElementById('adminAuthLoading')?.remove();
  document.getElementById('adminShell').hidden=false;
- loadProducts();
+ loadProducts();loadStones();
 })();
 
 document.getElementById('adminLogout')?.addEventListener('click',async()=>{await sb.auth.signOut();location.replace('login.html');});
@@ -123,3 +123,41 @@ window.deleteProduct=async(id,imageUrlEncoded)=>{
  if(imageUrl.includes(marker)){const path=imageUrl.split(marker)[1];if(path)await sb.storage.from('product-images').remove([decodeURIComponent(path)]);}
  loadProducts();
 };
+async function loadStones(){
+ const list=document.getElementById('stoneList');if(!list)return;
+ const {data,error}=await sb.from('stones').select('*').order('id',{ascending:false});
+ if(error){list.innerHTML='<p class="adminHint">원석 저장용 DB 설정이 필요합니다: '+escapeHtml(error.message)+'</p>';return;}
+ if(!data?.length){list.innerHTML='<p class="adminHint">아직 등록된 원석이 없습니다. 아래에서 첫 원석을 등록해 주세요.</p>';return;}
+ list.innerHTML='<div class="adminProductList">'+data.map(s=>'<article class="adminProductItem">'+
+ '<img src="'+escapeHtml(s.image_url||'')+'" alt=""><div class="adminProductInfo"><b>'+escapeHtml(s.name||'')+'</b><small>원석 이야기</small><span>'+escapeHtml(s.symbolism||'')+'</span></div>'+
+ '<div class="adminProductActions"><button type="button" class="editStoneBtn" data-id="'+s.id+'">수정</button><button type="button" class="deleteStoneBtn" data-id="'+s.id+'">삭제</button></div></article>').join('')+'</div>';
+ list.querySelectorAll('.editStoneBtn').forEach(b=>b.addEventListener('click',()=>editStone(data.find(s=>String(s.id)===b.dataset.id))));
+ list.querySelectorAll('.deleteStoneBtn').forEach(b=>b.addEventListener('click',()=>deleteStone(data.find(s=>String(s.id)===b.dataset.id))));
+}
+function editStone(s){
+ stoneId.value=s.id;existingStoneImageUrl.value=s.image_url||'';stoneName.value=s.name||'';stoneFeatures.value=s.features||'';stoneStory.value=s.story||'';stoneSymbolism.value=s.symbolism||'';
+ stonePreview.innerHTML=s.image_url?'<img src="'+escapeHtml(s.image_url)+'" alt="현재 원석 사진">':'원석 사진 미리보기';
+ stoneFormTitle.textContent='원석 수정';stoneSave.textContent='수정 저장';stoneCancelEdit.hidden=false;stoneFormTitle.scrollIntoView({behavior:'smooth'});
+}
+function resetStoneForm(){
+ stoneForm.reset();stoneId.value='';existingStoneImageUrl.value='';stonePreview.textContent='원석 사진 미리보기';stoneFormTitle.textContent='새 원석 등록';stoneSave.textContent='원석 저장';stoneCancelEdit.hidden=true;
+}
+document.getElementById('newStoneBtn')?.addEventListener('click',()=>{resetStoneForm();stoneFormTitle.scrollIntoView({behavior:'smooth'});});
+document.getElementById('stoneCancelEdit')?.addEventListener('click',resetStoneForm);
+document.getElementById('stoneForm')?.addEventListener('submit',async e=>{
+ e.preventDefault();const btn=stoneSave,status=stoneStatus,file=stoneImage.files?.[0],id=stoneId.value;let imageUrl=existingStoneImageUrl.value;
+ if(!file&&!imageUrl){status.textContent='원석 사진을 선택해 주세요.';return;}
+ btn.disabled=true;status.textContent='저장 중...';
+ try{
+  if(file){const ext=(file.name.split('.').pop()||'jpg').toLowerCase();const path='stones/'+Date.now()+'-'+crypto.randomUUID()+'.'+ext;const up=await sb.storage.from('product-images').upload(path,file,{cacheControl:'3600',upsert:false});if(up.error)throw up.error;imageUrl=sb.storage.from('product-images').getPublicUrl(path).data.publicUrl;}
+  const row={name:stoneName.value.trim(),features:stoneFeatures.value.trim(),story:stoneStory.value.trim(),symbolism:stoneSymbolism.value.trim(),image_url:imageUrl};
+  const result=id?await sb.from('stones').update(row).eq('id',id):await sb.from('stones').insert(row);if(result.error)throw result.error;
+  resetStoneForm();status.textContent=id?'원석 이야기가 수정되었습니다.':'원석 이야기가 저장되었습니다.';await loadStones();
+ }catch(err){status.textContent='저장 실패: '+(err.message||err);}finally{btn.disabled=false;}
+});
+async function deleteStone(s){
+ if(!confirm('이 원석 이야기를 삭제할까요?'))return;
+ const del=await sb.from('stones').delete().eq('id',s.id);if(del.error){alert('삭제 실패: '+del.error.message);return;}
+ const marker='/storage/v1/object/public/product-images/';if((s.image_url||'').includes(marker)){const path=s.image_url.split(marker)[1];if(path)await sb.storage.from('product-images').remove([decodeURIComponent(path)]);}
+ loadStones();
+}

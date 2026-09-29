@@ -6,7 +6,9 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
  const dynamic=document.getElementById('dynamicStoneCards');
  const defaults=document.getElementById('defaultStoneCards');
  const {data,error}=await stonesDb.from('stones').select('*').order('id',{ascending:false});
- if(error||!data?.length){dynamic.style.display='none';return;}
+ console.log('stones db',data,error);
+ if(error){dynamic.style.display='none'; console.error(error); return;}
+ if(!data?.length){dynamic.style.display='none';return;}
  defaults.style.display='none';
  dynamic.innerHTML=data.map(s=>`<article class="stoneDbCard">
  <div class="stoneDbImage"><img src="${esc(s.image_url)}" alt="${esc(s.name)}"></div>

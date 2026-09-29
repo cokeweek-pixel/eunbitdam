@@ -25,37 +25,63 @@ const won=n=>Number(n||0).toLocaleString('ko-KR')+'원';
 async function loadProducts(){
  const list=document.getElementById('productList'); if(!list)return;
  const {data,error}=await sb.from('products').select('*').order('id',{ascending:false});
- if(error){list.innerHTML='<p class="adminHint">상품 목록을 불러오지 못했습니다: '+error.message+'</p>';return;}
- if(!data?.length){list.innerHTML='<p class="adminHint">아직 데이터베이스에 등록된 상품이 없습니다.</p>';return;}
- list.innerHTML='<h2 style="margin-top:40px">등록 상품</h2>'+data.map(p=>'<div style="display:grid;grid-template-columns:80px 1fr auto;gap:16px;align-items:center;padding:12px 0;border-bottom:1px solid #ddd"><img src="'+(p.image_url||'')+'" style="width:80px;height:80px;object-fit:cover"><div><b>'+escapeHtml(p.name||'')+'</b><br><small>'+escapeHtml(p.category||'')+' · '+won(p.sale_price||p.price)+'</small></div><button type="button" onclick="deleteProduct('+p.id+',\''+encodeURIComponent(p.image_url||'')+'\')">삭제</button></div>').join('');
+ if(error){list.innerHTML='<p class="adminHint">상품 목록을 불러오지 못했습니다: '+escapeHtml(error.message)+'</p>';return;}
+ if(!data?.length){list.innerHTML='<p class="adminHint">아직 데이터베이스에 등록된 상품이 없습니다. 아래에서 첫 상품을 등록해 주세요.</p>';return;}
+ list.innerHTML='<div class="adminProductList">'+data.map(p=>'<article class="adminProductItem">'+
+  '<img src="'+escapeHtml(p.image_url||'')+'" alt="">'+
+  '<div class="adminProductInfo"><b>'+escapeHtml(p.name||'')+'</b><small>'+escapeHtml(p.category||'')+' · '+won(p.sale_price||p.price)+'</small><span>'+escapeHtml(p.description||'')+'</span></div>'+
+  '<div class="adminProductActions"><button type="button" class="editProductBtn" data-id="'+p.id+'">수정</button><button type="button" class="deleteProductBtn" data-id="'+p.id+'">삭제</button></div></article>').join('')+'</div>';
+ list.querySelectorAll('.editProductBtn').forEach(b=>b.addEventListener('click',()=>editProduct(data.find(p=>String(p.id)===b.dataset.id))));
+ list.querySelectorAll('.deleteProductBtn').forEach(b=>b.addEventListener('click',()=>{const p=data.find(x=>String(x.id)===b.dataset.id);deleteProduct(p.id,encodeURIComponent(p.image_url||''));}));
 }
+function editProduct(p){
+ document.getElementById('productId').value=p.id;
+ document.getElementById('existingImageUrl').value=p.image_url||'';
+ document.getElementById('productName').value=p.name||'';
+ document.getElementById('productCategory').value=p.category||'';
+ document.getElementById('productDescription').value=p.description||'';
+ document.getElementById('productPrice').value=p.price||'';
+ document.getElementById('productSalePrice').value=p.sale_price||'';
+ document.getElementById('productSmartstore').value=p.smartstore_url||'';
+ document.getElementById('productPreview').innerHTML=p.image_url?'<img src="'+escapeHtml(p.image_url)+'" alt="현재 상품 사진">':'사진 미리보기';
+ document.getElementById('productFormTitle').textContent='상품 수정';
+ document.getElementById('productSave').textContent='수정 저장';
+ document.getElementById('productCancelEdit').hidden=false;
+ document.getElementById('productFormTitle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function resetProductForm(){
+ const f=document.getElementById('productForm');f.reset();
+ document.getElementById('productId').value='';document.getElementById('existingImageUrl').value='';
+ document.getElementById('productPreview').textContent='사진 미리보기';
+ document.getElementById('productFormTitle').textContent='새 상품 등록';
+ document.getElementById('productSave').textContent='상품 저장';
+ document.getElementById('productCancelEdit').hidden=true;
+}
+document.getElementById('newProductBtn')?.addEventListener('click',()=>{resetProductForm();document.getElementById('productFormTitle').scrollIntoView({behavior:'smooth'});});
+document.getElementById('productCancelEdit')?.addEventListener('click',resetProductForm);
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
 document.getElementById('productForm')?.addEventListener('submit',async e=>{
  e.preventDefault();
- const status=document.getElementById('productStatus'),btn=document.getElementById('productSave'),file=document.getElementById('productImage').files?.[0];
- if(!file){status.textContent='상품 사진을 선택해 주세요.';return;}
- btn.disabled=true;status.textContent='사진 업로드 중...';
+ const status=document.getElementById('productStatus'),btn=document.getElementById('productSave');
+ const file=document.getElementById('productImage').files?.[0];
+ const id=document.getElementById('productId').value;
+ let imageUrl=document.getElementById('existingImageUrl').value;
+ if(!file&&!imageUrl){status.textContent='상품 사진을 선택해 주세요.';return;}
+ btn.disabled=true;status.textContent=id?'상품 수정 중...':'사진 업로드 중...';
  try{
-  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-  const path='products/'+Date.now()+'-'+crypto.randomUUID()+'.'+ext;
-  const up=await sb.storage.from('product-images').upload(path,file,{cacheControl:'3600',upsert:false});
-  if(up.error)throw up.error;
-  const {data:pub}=sb.storage.from('product-images').getPublicUrl(path);
-  status.textContent='상품정보 저장 중...';
-  const row={
-   name:document.getElementById('productName').value.trim(),
-   category:document.getElementById('productCategory').value.trim(),
-   description:document.getElementById('productDescription').value.trim(),
-   price:Number(document.getElementById('productPrice').value)||null,
-   sale_price:Number(document.getElementById('productSalePrice').value)||null,
-   smartstore_url:document.getElementById('productSmartstore').value.trim(),
-   image_url:pub.publicUrl
-  };
-  const ins=await sb.from('products').insert(row);
-  if(ins.error){await sb.storage.from('product-images').remove([path]);throw ins.error;}
-  e.target.reset();document.getElementById('productPreview').textContent='사진 미리보기';
-  status.textContent='저장되었습니다. SHOP 페이지에 자동 반영됩니다.';
+  if(file){
+   const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+   const path='products/'+Date.now()+'-'+crypto.randomUUID()+'.'+ext;
+   const up=await sb.storage.from('product-images').upload(path,file,{cacheControl:'3600',upsert:false});
+   if(up.error)throw up.error;
+   const {data:pub}=sb.storage.from('product-images').getPublicUrl(path);
+   imageUrl=pub.publicUrl;
+  }
+  const row={name:document.getElementById('productName').value.trim(),category:document.getElementById('productCategory').value.trim(),description:document.getElementById('productDescription').value.trim(),price:Number(document.getElementById('productPrice').value)||null,sale_price:Number(document.getElementById('productSalePrice').value)||null,smartstore_url:document.getElementById('productSmartstore').value.trim(),image_url:imageUrl};
+  const result=id?await sb.from('products').update(row).eq('id',id):await sb.from('products').insert(row);
+  if(result.error)throw result.error;
+  resetProductForm();status.textContent=id?'수정되었습니다.':'저장되었습니다.';
   await loadProducts();
  }catch(err){status.textContent='저장 실패: '+(err.message||err);}
  finally{btn.disabled=false;}

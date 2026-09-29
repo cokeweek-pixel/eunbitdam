@@ -1,0 +1,3 @@
+document.querySelectorAll('.adminSide button[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.adminSide button').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.adminPanel').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById(btn.dataset.tab)?.classList.add('active');}));
+function preview(inputId,previewId){const input=document.getElementById(inputId), box=document.getElementById(previewId);input?.addEventListener('change',()=>{const f=input.files?.[0];if(!f)return;const u=URL.createObjectURL(f);box.innerHTML='<img src="'+u+'" alt="미리보기">';});}
+preview('productImage','productPreview');preview('heroImage','heroPreview');preview('stoneImage','stonePreview');

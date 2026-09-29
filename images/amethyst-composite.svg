@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 540">
+<defs><clipPath id="r"><rect width="1200" height="540" rx="0"/></clipPath><filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-opacity=".18"/></filter></defs>
+<g clip-path="url(#r)">
+<image href="https://commons.wikimedia.org/wiki/Special:Redirect/file/Raw%20amethyst%20crystals%201.jpg" width="1200" height="540" preserveAspectRatio="xMidYMid slice"/>
+<rect width="1200" height="540" fill="#f3e7dc" opacity=".08"/>
+<g filter="url(#shadow)" style="mix-blend-mode:multiply">
+<image href="https://commons.wikimedia.org/wiki/Special:Redirect/file/Banded%20Amethyst%20Bracelet.jpg" x="650" y="180" width="470" height="300" preserveAspectRatio="xMidYMid meet"/>
+</g>
+</g></svg>

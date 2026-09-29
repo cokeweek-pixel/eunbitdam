@@ -59,6 +59,34 @@ function resetProductForm(){
 }
 document.getElementById('newProductBtn')?.addEventListener('click',()=>{resetProductForm();document.getElementById('productFormTitle').scrollIntoView({behavior:'smooth'});});
 document.getElementById('productCancelEdit')?.addEventListener('click',resetProductForm);
+document.getElementById('importExistingProducts')?.addEventListener('click',async()=>{
+ const btn=document.getElementById('importExistingProducts');
+ if(!confirm('현재 SHOP에 있는 28개 상품을 관리자 데이터베이스로 가져올까요?\n이미 등록된 같은 스마트스토어 상품은 건너뜁니다.'))return;
+ btn.disabled=true;const old=btn.textContent;btn.textContent='가져오는 중...';
+ try{
+  const html=await fetch('shop.html?import='+Date.now()).then(x=>x.text());
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const cards=[...doc.querySelectorAll('.shopCard')];
+  const {data:existing,error:readError}=await sb.from('products').select('smartstore_url');
+  if(readError)throw readError;
+  const urls=new Set((existing||[]).map(x=>x.smartstore_url).filter(Boolean));
+  const rows=cards.map(card=>{
+   const name=card.querySelector('h3')?.textContent.trim()||'';
+   const description=card.querySelector('p')?.textContent.trim()||'';
+   const price=Number((card.querySelector('strong')?.textContent||'').replace(/[^0-9]/g,''))||null;
+   const smartstore_url=card.querySelector('.productLink')?.href||'';
+   const src=card.querySelector('.productPhoto img')?.getAttribute('src')||'';
+   const image_url=src?new URL(src,location.href).href:'';
+   const category=name.includes('목걸이')?'목걸이':name.includes('팔찌')?'팔찌':name.includes('귀걸이')?'귀걸이':'주얼리';
+   return {name,category,description,price,sale_price:price,smartstore_url,image_url};
+  }).filter(x=>x.name&&x.smartstore_url&&!urls.has(x.smartstore_url));
+  if(!rows.length){alert('가져올 새 상품이 없습니다.');return;}
+  const {error}=await sb.from('products').insert(rows);
+  if(error)throw error;
+  alert(rows.length+'개 상품을 가져왔습니다.');await loadProducts();
+ }catch(err){alert('상품 가져오기 실패: '+(err.message||err));}
+ finally{btn.disabled=false;btn.textContent=old;}
+});
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 
 document.getElementById('productForm')?.addEventListener('submit',async e=>{

@@ -24,3 +24,11 @@ if(document.getElementById('dbShopGrid')&&window.supabase){
   grid.innerHTML=data.map(p=>'<article class="shopCard"><div class="productPhoto"><img src="'+esc(p.image_url)+'" alt="'+esc(p.name)+'"></div><h3>'+esc(p.name)+'</h3><p>'+esc(p.description||p.category||'')+'</p><strong>'+Number(p.sale_price||p.price||0).toLocaleString('ko-KR')+'원</strong><a class="productLink" href="'+esc(p.smartstore_url)+'" target="_blank" rel="noopener">스마트스토어에서 보기 →</a></article>').join('');
  });
 }
+
+// 은빛담 방문자 집계 (공개 페이지 공통)
+(function(){
+  const script=document.createElement('script');
+  script.src=new URL('visits.js?v=20261013-1',document.currentScript?.src||location.href).href;
+  script.async=true;
+  document.body.appendChild(script);
+})();

@@ -6,6 +6,8 @@ let currentSession=null;
 (async()=>{
  const {data,error}=await sb.auth.getSession();
  if(error||!data.session){location.replace('login.html');return;}
+ const permission=await sb.rpc('is_eunbitdam_admin');
+ if(permission.error||permission.data!==true){document.getElementById('adminAuthLoading').textContent='관리자 전용 페이지입니다. 접근 권한이 없습니다.';return;}
  currentSession=data.session;
  document.getElementById('adminAuthLoading')?.remove();
  document.getElementById('adminShell').hidden=false;

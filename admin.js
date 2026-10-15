@@ -163,3 +163,37 @@ async function deleteStone(s){
  const marker='/storage/v1/object/public/product-images/';if((s.image_url||'').includes(marker)){const path=s.image_url.split(marker)[1];if(path)await sb.storage.from('product-images').remove([decodeURIComponent(path)]);}
  loadStones();
 }
+
+async function refreshCommunityAdmin(){
+ const list=document.getElementById('communityAdminList');
+ const status=document.getElementById('communityAdminStatus');
+ if(!list)return;
+ status.textContent='불러오는 중...';
+ const result=await sb.from('community_posts').select('id,nickname,body,created_at').order('created_at',{ascending:false}).limit(200);
+ if(result.error){status.textContent='조회 오류: '+result.error.message;return;}
+ list.replaceChildren();
+ status.textContent='게시글 '+result.data.length+'개';
+ for(const item of result.data){
+  const box=document.createElement('div');
+  box.style.cssText='border-bottom:1px solid #ddd;padding:16px 0';
+  const head=document.createElement('strong');
+  head.textContent=item.nickname+' · '+new Date(item.created_at).toLocaleString('ko-KR');
+  const body=document.createElement('p');
+  body.textContent=item.body;
+  const remove=document.createElement('button');
+  remove.type='button';
+  remove.textContent='삭제';
+  remove.onclick=async()=>{
+   if(!confirm('게시글을 삭제할까요?'))return;
+   remove.disabled=true;
+   const out=await sb.from('community_posts').delete().eq('id',item.id).select('id');
+   if(out.error){alert(out.error.message);remove.disabled=false;return;}
+   if(!out.data.length){alert('삭제 권한이 없거나 게시글이 없습니다.');remove.disabled=false;return;}
+   refreshCommunityAdmin();
+  };
+  box.append(head,body,remove);
+  list.append(box);
+ }
+}
+document.querySelector('[data-tab="communityadmin"]')?.addEventListener('click',refreshCommunityAdmin);
+document.getElementById('communityRefresh')?.addEventListener('click',refreshCommunityAdmin);

@@ -197,3 +197,32 @@ async function refreshCommunityAdmin(){
 }
 document.querySelector('[data-tab="communityadmin"]')?.addEventListener('click',refreshCommunityAdmin);
 document.getElementById('communityRefresh')?.addEventListener('click',refreshCommunityAdmin);
+
+
+// Member data is served only by a SECURITY DEFINER RPC with an admin check.
+let memberRows=[];
+function renderMembers(){
+ const root=document.getElementById('memberList');if(!root)return;
+ const q=(document.getElementById('memberSearch')?.value||'').trim().toLowerCase();
+ const rows=memberRows.filter(m=>String(m.email||'').toLowerCase().includes(q)||String(m.nickname||'').toLowerCase().includes(q));
+ root.replaceChildren();
+ const table=document.createElement('table');table.style.cssText='width:100%;border-collapse:collapse;min-width:720px;text-align:left';
+ const thead=document.createElement('thead'),tr=document.createElement('tr');
+ ['이메일','닉네임','가입일','이메일 인증','최근 로그인','권한'].forEach(label=>{const th=document.createElement('th');th.textContent=label;th.style.cssText='padding:12px 9px;border-bottom:2px solid #d8c9b9';tr.append(th);});thead.append(tr);table.append(thead);
+ const tbody=document.createElement('tbody');
+ for(const m of rows){const row=document.createElement('tr');const values=[m.email||'—',m.nickname||'—',m.created_at?new Date(m.created_at).toLocaleDateString('ko-KR'):'—',m.email_confirmed_at?'인증 완료':'미인증',m.last_sign_in_at?new Date(m.last_sign_in_at).toLocaleString('ko-KR'):'기록 없음',m.is_admin?'관리자':'일반 회원'];values.forEach(v=>{const td=document.createElement('td');td.textContent=v;td.style.cssText='padding:12px 9px;border-bottom:1px solid #e7ddd2;white-space:nowrap';row.append(td);});tbody.append(row);}table.append(tbody);root.append(table);
+ if(!rows.length){const p=document.createElement('p');p.className='adminHint';p.textContent='조건에 맞는 회원이 없습니다.';root.append(p);}
+}
+async function loadMembers(){
+ const status=document.getElementById('memberStatus');if(!status)return;
+ status.textContent='회원 목록을 불러오는 중...';
+ const {data,error}=await sb.rpc('get_eunbitdam_members');
+ if(error){status.textContent=error.code==='PGRST202'?'회원 조회용 데이터베이스 함수가 아직 설정되지 않았습니다. 관리자에게 SQL 설정을 요청하세요.':'회원 조회 실패: '+error.message;return;}
+ memberRows=Array.isArray(data)?data:[];
+ document.getElementById('memberCount').textContent='('+memberRows.length+'명)';
+ status.textContent='회원 '+memberRows.length+'명 · 회원 정보는 관리자에게만 표시됩니다.';
+ renderMembers();
+}
+document.querySelector('[data-tab="members"]')?.addEventListener('click',loadMembers);
+document.getElementById('memberRefresh')?.addEventListener('click',loadMembers);
+document.getElementById('memberSearch')?.addEventListener('input',renderMembers);

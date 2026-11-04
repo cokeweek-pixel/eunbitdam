@@ -19,14 +19,26 @@ el('bulkPreviewBtn')?.addEventListener('click',async()=>{
  const buf=await file.arrayBuffer(),book=XLSX.read(buf,{type:'array',cellDates:false}),sheet=book.Sheets[book.SheetNames[0]],grid=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false,blankrows:false});cachedGrid=grid;el('bulkProductMapping')?.remove();
  let header=-1,map={};for(let i=0;i<Math.min(25,grid.length);i++){const names=(grid[i]||[]).map(norm),m=Object.fromEntries(Object.entries(aliases).map(([k,v])=>[k,col(v,names)]));if(m.name>=0&&(m.price>=0||m.normal>=0)&&(m.url>=0||m.number>=0)){header=i;map=m;break;}}
  if(header<0){showMapping(grid);return;}
- importRows(grid,header,map);\n});\nfunction importRows(grid,header,map){\n const seen=new Set(),rows=[];
- for(const row of grid.slice(header+1)){if(!row.some(v=>String(v).trim()))continue;const p=toRow(row,map);if(!p.name)continue;const id=productId(p.smartstore_url);p.issue=!p.smartstore_url?'상품번호·주소 확인 필요':!p.sale_price?'판매가 확인 필요':seen.has(id)?'파일 내 중복':'';
- if(id)seen.add(id);rows.push(p);}
- pending=rows.filter(p=>!p.issue).map(({state,...p})=>p);show(rows);
- status.textContent='분석 '+rows.length+'건 / 저장 가능 '+pending.length+'건 / 제외 '+(rows.length-pending.length)+'건. 이미지 URL이 없는 상품은 사진 없이 표시됩니다. 미리보기 확인 후 저장하세요.';
- el('bulkImportBtn').disabled=!pending.length;
+ importRows(grid,header,map);
  }catch(e){pending=[];el('bulkImportBtn').disabled=true;status.textContent='파일 분석 실패: '+e.message;}
 });
+function importRows(grid,header,map){
+ const seen=new Set(),rows=[];
+ for(const row of grid.slice(header+1)){if(!row.some(v=>String(v).trim()))continue;const p=toRow(row,map);if(!p.name)continue;const id=productId(p.smartstore_url);p.issue=!p.smartstore_url?'상품번호·주소 확인 필요':!p.sale_price?'판매가 확인 필요':seen.has(id)?'파일 내 중복':'';if(id)seen.add(id);rows.push(p);}
+ pending=rows.filter(p=>!p.issue).map(({state,...p})=>p);show(rows);
+ status.textContent='분석 '+rows.length+'건 / 저장 가능 '+pending.length+'건 / 제외 '+(rows.length-pending.length)+'건. 미리보기를 확인하세요.';
+ el('bulkImportBtn').disabled=!pending.length;
+}
+function showMapping(grid){
+ const root=document.createElement('div');root.id='bulkProductMapping';root.style.cssText='border:1px solid #cbb9a6;padding:16px;margin:12px 0';
+ const p=document.createElement('p');p.textContent='열 제목을 자동으로 찾지 못했습니다. 열 제목 행과 각 항목을 직접 지정해 주세요.';root.append(p);
+ const headerSelect=document.createElement('select');for(let i=0;i<Math.min(grid.length,20);i++){const opt=document.createElement('option');opt.value=i;opt.textContent=(i+1)+'행: '+(grid[i]||[]).slice(0,5).join(' / ').slice(0,130);headerSelect.append(opt);}root.append('열 제목 행: ',headerSelect);
+ const fields=[['name','상품명'],['price','판매가'],['normal','정상가(선택)'],['number','상품번호'],['url','상품주소(선택)'],['image','대표이미지 URL(선택)'],['desc','설명(선택)'],['category','카테고리(선택)']],selects={};
+ const wrap=document.createElement('div');wrap.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:15px 0';root.append(wrap);
+ function refresh(){wrap.replaceChildren();const i=Number(headerSelect.value),head=grid[i]||[];fields.forEach(([key,label])=>{const holder=document.createElement('label');holder.textContent=label;const s=document.createElement('select');s.style.cssText='width:100%;padding:8px';const blank=document.createElement('option');blank.value='-1';blank.textContent='선택 안 함';s.append(blank);head.forEach((h,j)=>{const opt=document.createElement('option');opt.value=j;opt.textContent=(j+1)+'열: '+String(h||'(제목 없음)').slice(0,55);s.append(opt);});s.value=String(col(aliases[key],head.map(norm)));selects[key]=s;holder.append(s);wrap.append(holder);});}
+ headerSelect.addEventListener('change',refresh);refresh();
+ const button=document.createElement('button');button.type='button';button.className='adminSave';button.textContent='선택한 열로 미리보기';button.addEventListener('click',()=>{const map=Object.fromEntries(fields.map(([key])=>[key,Number(selects[key].value)]));map.state=-1;if(map.name<0||(map.price<0&&map.normal<0)||(map.number<0&&map.url<0)){status.textContent='상품명, 가격, 상품번호 또는 상품주소를 지정해 주세요.';return;}importRows(grid,Number(headerSelect.value),map);});root.append(button);el('bulkProductPreview').before(root);status.textContent='파일을 열었습니다. 아래에서 열을 직접 지정해 주세요.';
+}
 el('bulkImportBtn')?.addEventListener('click',async()=>{
  if(!pending.length)return;const btn=el('bulkImportBtn');if(!confirm('검증된 '+pending.length+'개 상품을 데이터베이스에 저장할까요? 기존 상품은 상품번호 기준으로 확인합니다.'))return;btn.disabled=true;
  try{

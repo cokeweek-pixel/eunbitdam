@@ -19,10 +19,14 @@ if(document.getElementById('dbShopGrid')&&window.supabase){
  const db=supabase.createClient('https://jkyavwcdzkityyqsazel.supabase.co','sb_publishable_dNe8kUYYQfh6m6umLmCgtQ_vrb1YfZK');
  const imageSrc=s=>{try{const u=new URL(String(s||''));if(u.protocol==='http:'&&u.hostname.endsWith('.naver.net'))u.protocol='https:';return u.protocol==='https:'?u.href:'';}catch{return '';}};
  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
- db.from('products').select('*').order('id',{ascending:false}).then(({data,error})=>{
-  if(error){console.error('SHOP 상품 조회 실패',error);document.getElementById('dbShopGrid').textContent='상품을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';return;} if(!data?.length){document.getElementById('dbShopGrid').textContent='등록된 상품이 없습니다.';return;}
+ db.from('products').select('id,name,description,category,price,sale_price,image_url,smartstore_url').order('id',{ascending:false}).then(({data,error})=>{
   const grid=document.getElementById('dbShopGrid');
-  grid.innerHTML=data.map(p=>'<article class="shopCard"><div class="productPhoto">'+(imageSrc(p.image_url)?'<img loading="lazy" src="'+esc(imageSrc(p.image_url))+'" alt="'+esc(p.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden class="productImageFallback">이미지 준비 중</span>':'<span class="productImageFallback">이미지 준비 중</span>')+'</div><h3>'+esc(p.name)+'</h3><p>'+esc(p.description||p.category||'')+'</p><strong>'+Number(p.sale_price||p.price||0).toLocaleString('ko-KR')+'원</strong><a class="productLink" href="'+esc(p.smartstore_url)+'" target="_blank" rel="noopener">스마트스토어에서 보기 →</a></article>').join('');
+  if(error){console.error('SHOP product fetch',error);grid.textContent='상품 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';return;}
+  if(!data?.length){grid.textContent='등록된 상품이 없습니다.';return;}
+  grid.innerHTML=data.map(p=>{
+   const url='product.html?id='+encodeURIComponent(p.id),src=imageSrc(p.image_url);
+   return '<article class="shopCard"><a href="'+url+'" aria-label="'+esc(p.name)+' 상세보기"><div class="productPhoto">'+(src?'<img loading="lazy" src="'+esc(src)+'" alt="'+esc(p.name)+'" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span hidden class="productImageFallback">이미지 준비 중</span>':'<span class="productImageFallback">이미지 준비 중</span>')+'</div></a><h3><a style="color:inherit;text-decoration:none" href="'+url+'">'+esc(p.name)+'</a></h3><p>'+esc(p.category||'')+'</p><strong>'+Number(p.sale_price??p.price??0).toLocaleString('ko-KR')+'원</strong><a class="productLink" href="'+url+'">상품 상세보기 →</a></article>';
+  }).join('');
  });
 }
 
